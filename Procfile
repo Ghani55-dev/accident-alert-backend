@@ -1,1 +1,1 @@
-web: gunicorn accident_detection.wsgi
+web: gunicorn accident_detection.wsgi --log-file -

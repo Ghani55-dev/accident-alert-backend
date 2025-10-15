@@ -136,5 +136,41 @@ REST_FRAMEWORK = {
 import firebase_admin
 from firebase_admin import credentials
 
-cred = credentials.Certificate("livetrafficai-firebase-adminsdk-fbsvc-00b40c4e63.json")
-firebase_admin.initialize_app(cred)
+cred = credentials.Certificate(
+    os.path.join(BASE_DIR, "livetrafficai-firebase-adminsdk-fbsvc-00b40c4e63.json")
+)
+
+# ✅ Only initialize if not already done
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
+
+
+
+from pathlib import Path
+import os
+import dj_database_url
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+SECRET_KEY = os.environ.get("SECRET_KEY", "unsafe-secret-key")
+DEBUG = os.environ.get("DEBUG", "True") == "True"
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
+
+# DATABASE CONFIG
+DATABASES = {
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600
+    )
+}
+
+# Static & Media
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Render Deployment Fix
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host]

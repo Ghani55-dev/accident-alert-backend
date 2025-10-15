@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: accident-detection-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn accident_detection.wsgi:application
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: accident_detection.settings
+      - key: PYTHON_VERSION
+        value: 3.11.9
