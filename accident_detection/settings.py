@@ -133,16 +133,21 @@ REST_FRAMEWORK = {
     ),
 }
 
-import firebase_admin
-from firebase_admin import credentials
+import os, json
+from firebase_admin import credentials, initialize_app
 
-cred = credentials.Certificate(
-    os.path.join(BASE_DIR, "livetrafficai-firebase-adminsdk-fbsvc-00b40c4e63.json")
-)
+firebase_creds = os.getenv("FIREBASE_CREDENTIALS")
 
-# ✅ Only initialize if not already done
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
+if firebase_creds:
+    cred = credentials.Certificate(json.loads(firebase_creds))
+else:
+    # Local development fallback (optional)
+    cred = credentials.Certificate(
+        os.path.join(BASE_DIR, "livetrafficai-firebase-adminsdk.json")
+    )
+
+firebase_app = initialize_app(cred)
+
 
 
 
