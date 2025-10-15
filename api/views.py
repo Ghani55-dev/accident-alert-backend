@@ -6,6 +6,12 @@ from .serializers import AccidentReportSerializer
 from .ml_model import predict_accident
 import requests
 from django.conf import settings
+import uuid
+from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.utils import timezone
+import json
 
 class AccidentReportView(APIView):
     permission_classes = [AllowAny]  # anyone can access
@@ -141,3 +147,71 @@ class CloudAlertView(APIView):
             "to_device": device_token,
             "alert_message": alert_message
         })
+
+
+
+
+@csrf_exempt
+def emergency_notify(request):
+    """
+    API Endpoint: /api/emergency/notify/
+    Accepts JSON payload like:
+    {
+        "latitude": 17.3850,
+        "longitude": 78.4867,
+        "severity": "high",
+        "description": "Severe crash detected",
+        "reported_via": "manual"
+    }
+    """
+    if request.method != 'POST':
+        return JsonResponse({"error": "Only POST method allowed"}, status=405)
+
+    try:
+        body = json.loads(request.body.decode('utf-8'))
+
+        latitude = body.get('latitude')
+        longitude = body.get('longitude')
+        severity = body.get('severity', 'medium')
+        description = body.get('description', 'Emergency Alert Triggered')
+        reported_via = body.get('reported_via', 'manual')
+
+        if not latitude or not longitude:
+            return JsonResponse({"error": "Latitude and longitude required"}, status=400)
+
+        # Optionally attach user (if authenticated via JWT)
+        user = None
+        if request.user.is_authenticated:
+            user = request.user
+
+        report = AccidentReport.objects.create(
+            id=uuid.uuid4(),
+            user=user,
+            latitude=latitude,
+            longitude=longitude,
+            severity=severity,
+            description=description,
+            reported_via=reported_via,
+            timestamp=timezone.now()
+        )
+
+        response_data = {
+            "success": True,
+            "message": "Emergency alert received successfully!",
+            "report": {
+                "id": str(report.id),
+                "latitude": report.latitude,
+                "longitude": report.longitude,
+                "severity": report.severity,
+                "description": report.description,
+                "reported_via": report.reported_via,
+                "timestamp": report.timestamp.isoformat(),
+            }
+        }
+
+        return JsonResponse(response_data, status=201)
+
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON format"}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
