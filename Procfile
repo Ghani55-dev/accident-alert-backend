@@ -1,2 +1,1 @@
 web: gunicorn accident_detection.wsgi
-
