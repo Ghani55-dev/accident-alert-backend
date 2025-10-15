@@ -25,6 +25,7 @@ google-resumable-media==2.7.2
 googleapis-common-protos==1.70.0
 grpcio==1.75.1
 grpcio-status==1.75.1
+gunicorn==23.0.0
 h11==0.16.0
 h2==4.3.0
 hpack==4.1.0
@@ -36,6 +37,7 @@ joblib==1.5.2
 msgpack==1.1.2
 multidict==6.7.0
 numpy==2.3.3
+packaging==25.0
 pandas==2.3.3
 propcache==0.4.1
 proto-plus==1.26.1
