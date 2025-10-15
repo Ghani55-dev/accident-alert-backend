@@ -1,1 +1,2 @@
-web: gunicorn accident_alert_backend.wsgi
+web: gunicorn accident_detection.wsgi
+
