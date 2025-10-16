@@ -8,6 +8,6 @@ urlpatterns = [
     path('accidents/sensor/', SensorAccidentReportView.as_view(), name='sensor_accident'),
     path('accidents/ble-alert/', BLEAlertView.as_view(), name='ble_alert'),
     path('accidents/cloud-alert/', CloudAlertView.as_view(), name='cloud_alert'),
-     path('emergency/notify/', views.emergency_notify, name='emergency_notify'),
+    path('emergency/notify/', views.emergency_notify, name='emergency_notify'),
 
 ]
