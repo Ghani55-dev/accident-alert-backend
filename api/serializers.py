@@ -1,14 +1,14 @@
 from rest_framework import serializers
-from .models import User, AccidentReport
+from .models import AccidentReport, User  # ✅ Import custom User model
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = User  # ✅ Use custom User model
         fields = ['id', 'username', 'email', 'phone_number', 'is_driver', 'is_bystander']
 
 class AccidentReportSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-
+    
     class Meta:
         model = AccidentReport
         fields = ['id', 'user', 'latitude', 'longitude', 'severity', 'description', 'timestamp', 'reported_via']

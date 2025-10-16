@@ -1,18 +1,16 @@
-from rest_framework.permissions import AllowAny,IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import AccidentReport
+from .models import AccidentReport, User  # ✅ FIX: Import your custom User model
 from .serializers import AccidentReportSerializer
 from .ml_model import predict_accident
 import requests
 from django.conf import settings
 import uuid
-from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.utils import timezone
 import json
-
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 
@@ -49,8 +47,11 @@ class VoiceAccidentReportView(APIView):
         detected = any(word.lower() in voice_text.lower() for word in keywords)
 
         if detected:
+            # ✅ FIX: Use request.user if authenticated, otherwise None
+            user = request.user if request.user.is_authenticated else None
+            
             report = AccidentReport.objects.create(
-                user=request.user,
+                user=user,
                 latitude=latitude,
                 longitude=longitude,
                 severity="high",
@@ -62,7 +63,6 @@ class VoiceAccidentReportView(APIView):
             return Response({"status": True, "report": serializer.data})
         else:
             return Response({"status": False, "message": "No emergency detected in voice"})
-
 
 
 class SensorAccidentReportView(APIView):
@@ -89,9 +89,12 @@ class SensorAccidentReportView(APIView):
             "gyro_z": gyro_z
         })
 
+        # ✅ FIX: Use request.user if authenticated, otherwise None
+        user = request.user if request.user.is_authenticated else None
+
         # Save accident report
         report = AccidentReport.objects.create(
-            user=request.user,
+            user=user,
             latitude=latitude,
             longitude=longitude,
             severity=severity,
@@ -100,7 +103,6 @@ class SensorAccidentReportView(APIView):
         )
         serializer = AccidentReportSerializer(report)
         return Response({"status": True, "report": serializer.data})
-
 
 
 # -------------------------------
@@ -115,7 +117,7 @@ class BLEAlertView(APIView):
         longitude = request.data.get("longitude")
         message = request.data.get("message", "Emergency detected nearby!")
 
-        # In real BLE integration, we’ll use Bluetooth broadcasting.
+        # In real BLE integration, we'll use Bluetooth broadcasting.
         # For now, just simulate response.
         return Response({
             "status": True,
@@ -152,8 +154,6 @@ class CloudAlertView(APIView):
         })
 
 
-
-
 @csrf_exempt
 def emergency_notify(request):
     """
@@ -182,10 +182,8 @@ def emergency_notify(request):
         if not latitude or not longitude:
             return JsonResponse({"error": "Latitude and longitude required"}, status=400)
 
-        # Optionally attach user (if authenticated via JWT)
-        user = None
-        if request.user.is_authenticated:
-            user = request.user
+        # ✅ FIX: Use request.user if authenticated, otherwise None
+        user = request.user if request.user.is_authenticated else None
 
         report = AccidentReport.objects.create(
             id=uuid.uuid4(),
@@ -220,7 +218,6 @@ def emergency_notify(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_user(request):
@@ -228,9 +225,11 @@ def register_user(request):
     User registration endpoint
     """
     try:
+        # ✅ FIX: Using the custom User model imported at top
         username = request.data.get('username')
         email = request.data.get('email')
         password = request.data.get('password')
+        phone_number = request.data.get('phone_number', '')  # Optional field from your model
 
         if not username or not email or not password:
             return Response({
@@ -250,21 +249,26 @@ def register_user(request):
                 'message': 'Email already exists'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create user
+        # ✅ FIX: Create user using your custom User model with all required fields
         user = User.objects.create_user(
             username=username,
             email=email,
-            password=password
+            password=password,
+            phone_number=phone_number or f"+91{username}",  # Default phone number
+            is_driver=False,  # Default values for your custom fields
+            is_bystander=True
         )
 
         return Response({
             'status': True,
             'message': 'User registered successfully',
-            'user_id': user.id
+            'user_id': user.id,
+            'username': user.username
         }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
+        print(f"❌ [BACKEND] Registration error: {e}")
         return Response({
             'status': False,
-            'message': str(e)
+            'message': f'Registration failed: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
