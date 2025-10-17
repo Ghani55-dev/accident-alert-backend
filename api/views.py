@@ -45,7 +45,7 @@ class VoiceAccidentReportView(APIView):
         longitude = request.data.get("longitude")
 
         # Keywords for accident/emergency
-        keywords = ["accident", "help", "emergency", "crash", "injury"]
+        keywords = ["accident", "help", "emergency", "crash", "injury", "collision", "hit", "ambulance", "hospital", "injured", "hurt", "bleeding", "pain", "trapped", "call police", "call ambulance", "need help", "save me", "rescue", "urgent", "critical", "dying", "unconscious"]
         detected = any(word.lower() in voice_text.lower() for word in keywords)
 
         if detected:
